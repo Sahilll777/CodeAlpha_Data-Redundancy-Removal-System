@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: .
+    container_name: data-redundancy-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/redundancy_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: sh wait-for-db.sh uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  db:
+    image: postgres:15
+    container_name: data-redundancy-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: redundancy_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis/redis-stack
+    container_name: data-redundancy-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
